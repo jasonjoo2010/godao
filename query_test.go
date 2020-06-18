@@ -5,6 +5,7 @@
 package godao
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -101,7 +102,9 @@ func TestQueryCondition(t *testing.T) {
 
 	q.Equal("a", 1)
 	q.Less("b", 1)
-	assert.Equal(t, 2, len(q.conditions))
+	q.Expr("length(@Name@)", "< length(@Value@) + ?", 10)
+	assert.Equal(t, 3, len(q.conditions))
+	fmt.Println(q.conditions)
 
 	data := q.Data()
 	assert.Equal(t, 2, len(data.Conditions))

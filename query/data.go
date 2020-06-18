@@ -65,7 +65,6 @@ func (o Op) Op() string {
 	case OpNotIn:
 		return "not in"
 	case OpExpr:
-		// TODO
 	}
 	return ""
 }
@@ -82,6 +81,7 @@ type Condition struct {
 	Op    Op
 	Field string
 	Value interface{}
+	Args  []interface{} // Bind to OpExpr, support deeper placeholders
 }
 
 // GetColumn returns the *column name* if there was specific Field or Column
@@ -125,12 +125,11 @@ func generateCondition(c *Condition,
 ) (string, []interface{}) {
 	switch c.Op {
 	case OpExpr:
-		// TODO deal with column name
 		expr, ok := c.Value.(string)
 		if !ok || len(expr) < 1 {
 			panic("expr should be a non-empty string")
 		}
-		return ParseColumnPlaceholder(c.Field, byName, byColumn) + " " + ParseColumnPlaceholder(expr, byName, byColumn), nil
+		return ParseColumnPlaceholder(c.Field, byName, byColumn) + " " + ParseColumnPlaceholder(expr, byName, byColumn), c.Args
 	default:
 		prefix := "`" + GetColumn(c.Field, byName, byColumn, true) + "` " + c.Op.Op()
 		switch c.Op {
@@ -164,6 +163,55 @@ func generateCondition(c *Condition,
 	}
 }
 
+func whereSQL(
+	fieldsByName map[string]*types.ModelField,
+	fieldsByColumn map[string]*types.ModelField,
+	data *Data,
+) (where string, args []interface{}) {
+	b := strings.Builder{}
+	for _, w := range data.Conditions {
+		if b.Len() > 0 {
+			if data.Or {
+				// or
+				b.WriteString(" or ")
+			} else {
+				// and
+				b.WriteString(" and ")
+			}
+		}
+		str, arr := generateCondition(&w, fieldsByName, fieldsByColumn)
+		b.WriteString(str)
+		if len(arr) > 0 {
+			args = append(args, arr...)
+		}
+	}
+
+	// children
+	for _, child := range data.Children {
+		str, params := whereSQL(fieldsByName, fieldsByColumn, &child)
+		if str != "" {
+			if b.Len() > 0 {
+				if data.Or {
+					// or
+					b.WriteString(" or ")
+				} else {
+					// and
+					b.WriteString(" and ")
+				}
+			}
+			b.WriteString("(")
+			b.WriteString(str)
+			b.WriteString(")")
+		}
+		if len(params) > 0 {
+			args = append(args, params...)
+		}
+	}
+
+	where = b.String()
+	return
+}
+
 func ConditionSQL(
 	fieldsByName map[string]*types.ModelField,
 	fieldsByColumn map[string]*types.ModelField,
@@ -171,24 +219,16 @@ func ConditionSQL(
 ) (string, []interface{}) {
 	var args []interface{}
 	sql := strings.Builder{}
+
 	// where
-	if len(data.Conditions) > 0 {
-		sql.WriteString("where ")
-		for i, w := range data.Conditions {
-			if i > 0 {
-				if data.Or {
-					// or
-					sql.WriteString(" or ")
-				} else {
-					// and
-					sql.WriteString(" and ")
-				}
-			}
-			str, arr := generateCondition(&w, fieldsByName, fieldsByColumn)
+	{
+		str, params := whereSQL(fieldsByName, fieldsByColumn, data)
+		if str != "" {
+			sql.WriteString("where ")
 			sql.WriteString(str)
-			if len(arr) > 0 {
-				args = append(args, arr...)
-			}
+		}
+		if len(params) > 0 {
+			args = append(args, params...)
 		}
 	}
 

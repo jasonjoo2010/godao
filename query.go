@@ -17,11 +17,12 @@ type Query struct {
 	order_by      []query.Order
 }
 
-func (q *Query) addCondition(field_name string, op query.Op, val interface{}) *Query {
+func (q *Query) addCondition(field_name string, op query.Op, val interface{}, args ...interface{}) *Query {
 	q.conditions = append(q.conditions, query.Condition{
 		Field: field_name,
 		Value: val,
 		Op:    op,
+		Args:  args,
 	})
 	return q
 }
@@ -102,8 +103,8 @@ func (q *Query) EndsWith(field_name string, val interface{}) *Query {
 //	Surely you can use RAW name of fields but it's not recommended
 //		Count + 1
 //		`Count` + 1
-func (q *Query) Expr(field_name, expr string) *Query {
-	return q.addCondition(field_name, query.OpExpr, expr)
+func (q *Query) Expr(field_name, expr string, args ...interface{}) *Query {
+	return q.addCondition(field_name, query.OpExpr, expr, args...)
 }
 
 // NoLimit infers no limit at all
