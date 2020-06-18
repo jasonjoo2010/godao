@@ -34,7 +34,7 @@ type Demo struct {
 }
 
 func testDB() *sql.DB {
-	db, _ := sql.Open("mysql", "root@tcp(192.168.123.3:3306)/test?charset=utf8mb4,utf8")
+	db, _ := sql.Open("mysql", "root@tcp(127.0.0.1:3306)/test?charset=utf8mb4,utf8")
 	return db
 }
 
