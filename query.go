@@ -95,16 +95,23 @@ func (q *Query) EndsWith(field_name string, val interface{}) *Query {
 
 // Expr represents a more like RAW condition.
 //	Pay attention possible violations and injections.
-//	Current field name can be referenced in expr by `@self@`
-//	Other fields in same model can be referenced in expr by `@fieldName@`
+//	Fields in same model can be referenced in expr by `@fieldName@`
 //	Examples:
-//		@self@ + 1
-//		@self@ + ceil(@Count@)
+//		@Id@ + 1
+//		@Id@ + ceil(@Count@)
 //	Surely you can use RAW name of fields but it's not recommended
 //		Count + 1
 //		`Count` + 1
 func (q *Query) Expr(field_name, expr string) *Query {
 	return q.addCondition(field_name, query.OpExpr, expr)
+}
+
+// NoLimit infers no limit at all
+//	Please use it carefully
+func (q *Query) NoLimit() *Query {
+	q.offset = 0
+	q.limit = 0
+	return q
 }
 
 // And joins all conditions in this query by AND
@@ -189,9 +196,6 @@ func (q *Query) Data() query.Data {
 	// offset, limit
 	data.Offset = q.offset
 	data.Limit = q.limit
-	if data.Limit < 1 {
-		data.Limit = 20
-	}
 
 	// sub queries
 	data.Children = []query.Data{}

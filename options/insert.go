@@ -4,6 +4,8 @@
 
 package options
 
+import "strings"
+
 type InsertOptions struct {
 	Ignore, Replace bool
 }
@@ -22,4 +24,23 @@ func WithReplace() InsertOption {
 	return func(opts *InsertOptions) {
 		opts.Replace = true
 	}
+}
+
+func InsertBaseSQL(table, columns string, cfg *InsertOptions) string {
+	b := strings.Builder{}
+	if cfg.Replace {
+		b.WriteString("replace into ")
+	} else {
+		b.WriteString("insert ")
+		if cfg.Ignore {
+			b.WriteString("ignore ")
+		}
+		b.WriteString("into ")
+	}
+	b.WriteString("`")
+	b.WriteString(table)
+	b.WriteString("` (")
+	b.WriteString(columns)
+	b.WriteString(") values ")
+	return b.String()
 }
