@@ -34,7 +34,7 @@ type Demo struct {
 }
 
 func testDB() *sql.DB {
-	db, _ := sql.Open("mysql", "root@tcp(127.0.0.1:3306)/test?charset=utf8mb4,utf8")
+	db, _ := sql.Open("mysql", "root@tcp(192.168.123.3:3306)/test?charset=utf8mb4,utf8")
 	return db
 }
 
@@ -55,6 +55,14 @@ func TestDaoBasic(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, int64(1), affected)
 	assert.True(t, id > 0)
+
+	// create another
+	var id1 int64
+	affected, id1, err = dao.Insert(context.Background(), &demo)
+	assert.Nil(t, err)
+	assert.Equal(t, int64(1), affected)
+	assert.True(t, id1 > 0)
+	dao.Delete(context.Background(), id1)
 
 	// update it
 	demo.Id = id

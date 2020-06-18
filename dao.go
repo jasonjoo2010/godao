@@ -270,7 +270,6 @@ func (dao *Dao) CountBy(ctx context.Context, name string, val interface{}) (int6
 	return dao.Count(ctx,
 		(&Query{}).
 			Equal(name, val).
-			NoLimit().
 			Data(),
 	)
 }
@@ -482,7 +481,6 @@ func (dao *Dao) Delete(ctx context.Context, ids ...interface{}) (int64, error) {
 	if len(ids) == 1 {
 		return dao.DeleteRange(ctx, (&Query{}).
 			Equal(dao.primaries[0].Name, ids[0]).
-			NoLimit().
 			Data())
 	}
 	return dao.DeleteRange(ctx, (&Query{}).
