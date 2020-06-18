@@ -3,6 +3,14 @@
 GoDao is an implementation of data object access based on `database/sql`.
 It provides security and easy for use when accessing data in db.
 
+## Tips
+
+Currently it is mainly tested under `MySQL` database.
+
+More databases adaption could be introduced in future.
+
+It's not something like `ORM` to keep light weight.
+
 ## Define Model
 
 Naming convertion follows camel style in struct and underscore style in tables. For instance:
