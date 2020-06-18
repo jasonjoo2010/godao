@@ -7,7 +7,7 @@ It provides security and easy for use when accessing data in db.
 
 Naming convertion follows camel style in struct and underscore style in tables. For instance:
 
-```
+```go
 Obj.Id => `id`
 Obj.id => `id`
 Obj.AvgTime => `avg_time`
@@ -20,13 +20,13 @@ An example:
 ```go
 type Demo struct {
     // Primary and auto_increament key
-	Id          int64 `dao:"primary;auto_increment"`
+    Id          int64 `dao:"primary;auto_increment"`
     Name, Value string
     // Omitted because it doesn't existed in table though it's not a good design actually.
     Extra       string `dao:"omit"`
     // The column name is count actually. Also it's not a good design.
-	Cnt         int    `dao:"column=count"`
-	CreateTime  int64
+    Cnt         int    `dao:"column=count"`
+    CreateTime  int64
 }
 ```
 
