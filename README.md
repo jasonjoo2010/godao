@@ -192,6 +192,10 @@ There are other features you can expirence:
 
 ## Changelog
 
+### v0.0.3
+
+Wrap all field names avoiding collision with keywords.
+
 ### v0.0.2
 
 Change the type of UpdateEntry.Value from string to interface{} which will fit more types of values.
