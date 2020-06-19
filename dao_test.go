@@ -64,6 +64,13 @@ func TestDaoBasic(t *testing.T) {
 	assert.True(t, id1 > 0)
 	dao.Delete(context.Background(), id1)
 
+	// insert with primary key set
+	demo.Id = id
+	affected, id1, err = dao.Insert(context.Background(), demo)
+	assert.Nil(t, err)
+	assert.Equal(t, int64(0), affected)
+	assert.Equal(t, int64(0), id1)
+
 	// update it
 	demo.Id = id
 	demo.Value = "v3"
