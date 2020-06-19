@@ -189,3 +189,13 @@ There are other features you can expirence:
 
 * Aggregation: Count/CountBy/Sum/Avg
 * Transaction: You can refer to `TestTxnCommit` and `TestTxnRollback` in `dao_test.go`.
+
+## Changelog
+
+### v0.0.2
+
+Change the type of UpdateEntry.Value from string to interface{} which will fit more types of values.
+
+### v0.0.1
+
+Initial beta
