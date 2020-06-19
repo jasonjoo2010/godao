@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	expressionPattern = regexp.MustCompile("(?i)^(.+)\\s+as\\s+([a-zA-Z0-9_]+)$")
+	expressionPattern = regexp.MustCompile("(?i)^(.+)\\s+as\\s+[`]?([a-zA-Z0-9_]+)[`]?\\s*$")
 )
 
 type SelectField struct {
@@ -123,12 +123,14 @@ func GenerateSelectFields(
 		if f.Expr == "" {
 			sqlBuilder.WriteString("`")
 			sqlBuilder.WriteString(f.Field.Column)
-			sqlBuilder.WriteString("` as ")
+			sqlBuilder.WriteString("` as `")
 			sqlBuilder.WriteString(f.Field.Name)
+			sqlBuilder.WriteString("`")
 		} else {
 			sqlBuilder.WriteString(f.Expr)
-			sqlBuilder.WriteString(" as ")
+			sqlBuilder.WriteString("` as `")
 			sqlBuilder.WriteString(f.Field.Name)
+			sqlBuilder.WriteString("`")
 		}
 	}
 	sql = sqlBuilder.String()

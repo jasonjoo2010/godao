@@ -19,7 +19,11 @@ func TestQueryLimit(t *testing.T) {
 
 	data := q.Data()
 	assert.Equal(t, 0, data.Offset)
-	assert.Equal(t, 20, data.Limit)
+	assert.Equal(t, 0, data.Limit)
+
+	q.NoLimit()
+	assert.Equal(t, 0, q.offset)
+	assert.Equal(t, 0, q.limit)
 
 	q.Limit(20)
 	assert.Equal(t, 0, q.offset)
@@ -107,5 +111,5 @@ func TestQueryCondition(t *testing.T) {
 	fmt.Println(q.conditions)
 
 	data := q.Data()
-	assert.Equal(t, 2, len(data.Conditions))
+	assert.Equal(t, 3, len(data.Conditions))
 }
