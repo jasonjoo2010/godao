@@ -59,7 +59,7 @@ func UpdateEntrySQL(
 		b.WriteString("`")
 		b.WriteString(f.Column)
 		b.WriteString("` = ")
-		if entry.Value != "" {
+		if entry.Value != nil {
 			b.WriteString("?")
 			args = append(args, entry.Value)
 		} else if entry.Expr != "" {

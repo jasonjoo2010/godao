@@ -12,7 +12,7 @@ import "fmt"
 //	It's DANGEROUS when using Expr method. Possible injections and data damagement could occur.
 type UpdateEntry struct {
 	Field string
-	Value string
+	Value interface{}
 	Expr  string
 	Args  []interface{} // bind to expr
 }
