@@ -11,6 +11,28 @@ More databases adaption could be introduced in future.
 
 It's not something like `ORM` to keep light weight.
 
+## A Quick Demo
+
+```go
+type User struct {
+    Id          int64 `dao:"primary;auto_increment"`
+    Name        string
+    Password    string
+}
+// db is an instance of database/sql.DB
+dao := godao.NewDao(User{}, db)
+// create
+affected_rows, user_id, err := dao.Insert(context.Background(), &User{
+    Name: "user1",
+    Password: "123456", // it's a bad practice though
+})
+// get
+obj, err := dao.SelectOne(context.Background(), user_id)
+user := obj.(*User)
+// get list
+list, err := dao.Select(context.Background(), (&godao.Query{}).Equal("Id", user_id).Data())
+```
+
 ## Define Model
 
 Naming convertion follows camel style in struct and underscore style in tables. For instance:
