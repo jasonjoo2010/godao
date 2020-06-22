@@ -242,11 +242,12 @@ func ConditionSQL(
 			if i > 0 {
 				sql.WriteString(", ")
 			}
+			sql.WriteString("`")
 			sql.WriteString(GetColumn(o.Field, fieldsByName, fieldsByColumn, true))
 			if o.Desc {
-				sql.WriteString(" desc")
+				sql.WriteString("` desc")
 			} else {
-				sql.WriteString(" asc")
+				sql.WriteString("` asc")
 			}
 		}
 	}
