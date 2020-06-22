@@ -11,6 +11,7 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/jasonjoo2010/godao/options"
 	"github.com/jasonjoo2010/godao/types"
 	"github.com/stretchr/testify/assert"
 )
@@ -86,6 +87,17 @@ func TestDaoBasic(t *testing.T) {
 	newDemo, ok := obj.(*Demo)
 	assert.True(t, ok)
 	assert.Equal(t, newDemo.Id, demo.Id)
+
+	// get partial
+	obj, err = dao.SelectOne(context.Background(), demo.Id, options.WithFieldString("Id,Name"))
+	assert.Nil(t, err)
+	assert.NotNil(t, obj)
+	newDemo, ok = obj.(*Demo)
+	assert.True(t, ok)
+	assert.Equal(t, demo.Id, newDemo.Id)
+	assert.Equal(t, demo.Name, newDemo.Name)
+	assert.Empty(t, newDemo.Value)
+	assert.Equal(t, int64(0), newDemo.Created)
 
 	// update none
 	demo.Id = -1
