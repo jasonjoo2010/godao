@@ -191,24 +191,17 @@ func (dao *Dao) Select(ctx context.Context, data query.Data, opts ...options.Sel
 	}
 	sqlBuilder.WriteString(";")
 
-	var stmt *sql.Stmt
-	var txn *sql.Tx
-	if txnCtx, ok := ctx.(*DaoTxnContext); ok {
-		txn = txnCtx.Txn()
-		stmt, err = txn.Prepare(sqlBuilder.String())
-	} else {
-		stmt, err = dao.db.Prepare(sqlBuilder.String())
-	}
-	if err != nil {
-		return
-	}
-	defer stmt.Close()
-
 	var rows *sql.Rows
-	rows, err = stmt.Query(args...)
+	if txnCtx, ok := ctx.(*DaoTxnContext); ok {
+		rows, err = txnCtx.Txn().Query(sqlBuilder.String(), args...)
+	} else {
+		rows, err = dao.db.Query(sqlBuilder.String(), args...)
+	}
 	if err != nil {
 		return
 	}
+	defer rows.Close()
+
 	for rows.Next() {
 		obj, err := dao.fetchObj(rows, fieldsSelect)
 		if err != nil {
@@ -244,19 +237,16 @@ func (dao *Dao) aggregate(ctx context.Context, data query.Data, aggregation stri
 		sqlBuilder.WriteString(conditionSQL)
 	}
 
-	var stmt *sql.Stmt
+	var row *sql.Row
 	if txnCtx, ok := ctx.(*DaoTxnContext); ok {
-		stmt, err = txnCtx.Txn().Prepare(sqlBuilder.String())
+		row = txnCtx.Txn().QueryRow(sqlBuilder.String(), args...)
 	} else {
-		stmt, err = dao.db.Prepare(sqlBuilder.String())
+		row = dao.db.QueryRow(sqlBuilder.String(), args...)
 	}
 	if err != nil {
 		return
 	}
-	defer stmt.Close()
 
-	var row *sql.Row
-	row = stmt.QueryRow(args...)
 	err = row.Scan(values...)
 	return
 }
@@ -328,9 +318,8 @@ func (dao *Dao) BatchInsert(ctx context.Context, arr []interface{}, opts ...opti
 	for _, fn := range opts {
 		fn(cfg)
 	}
-	hodler := "(" + dao.valuesHolder + ")"
+	holder := "(" + dao.valuesHolder + ")"
 	sqlBase := options.InsertBaseSQL(dao.table, dao.columnsAll, cfg)
-	var stmt *sql.Stmt
 	var txn *sql.Tx
 	if txnCtx, ok := ctx.(*DaoTxnContext); ok {
 		txn = txnCtx.Txn()
@@ -341,12 +330,8 @@ func (dao *Dao) BatchInsert(ctx context.Context, arr []interface{}, opts ...opti
 		}
 		defer txn.Commit()
 	}
-	stmt, err = txn.Prepare(sqlBase + hodler + ";")
-	if err != nil {
-		return
-	}
-	defer stmt.Close()
 
+	sqlStr := sqlBase + holder + ";"
 	values := make([]interface{}, len(dao.fields))
 	for i, obj := range arr {
 		err := model.Flatten(values, dao.modelType, dao.fields, obj)
@@ -354,7 +339,7 @@ func (dao *Dao) BatchInsert(ctx context.Context, arr []interface{}, opts ...opti
 			logrus.Warn("Flatten object failed, ignore: ", err.Error())
 			continue
 		}
-		result, err := stmt.ExecContext(ctx, values...)
+		result, err := txn.ExecContext(ctx, sqlStr, values...)
 		if err != nil {
 			logrus.Warn("Insert into table failed: ", err.Error())
 			continue
@@ -382,7 +367,6 @@ func (dao *Dao) Update(ctx context.Context, item interface{}) (int64, error) {
 }
 
 func (dao *Dao) BatchUpdate(ctx context.Context, items []interface{}) (affected int64, err error) {
-	var stmt *sql.Stmt
 	var txn *sql.Tx
 	if txnCtx, ok := ctx.(*DaoTxnContext); ok {
 		txn = txnCtx.Txn()
@@ -393,11 +377,8 @@ func (dao *Dao) BatchUpdate(ctx context.Context, items []interface{}) (affected 
 		}
 		defer txn.Commit()
 	}
-	stmt, err = txn.Prepare(options.UpdateSQL(dao.table, dao.fields))
-	if err != nil {
-		return
-	}
-	defer stmt.Close()
+	sqlStr := options.UpdateSQL(dao.table, dao.fields)
+
 	values := make([]interface{}, len(dao.fields))
 	valuesPrimary := make([]interface{}, len(dao.primaries))
 	args := make([]interface{}, len(dao.fields))
@@ -421,7 +402,7 @@ func (dao *Dao) BatchUpdate(ctx context.Context, items []interface{}) (affected 
 			args[pos] = v
 			pos++
 		}
-		result, err := stmt.Exec(args...)
+		result, err := txn.Exec(sqlStr, args...)
 		if err != nil {
 			logrus.Warn("Update table failed: ", err.Error())
 			continue
@@ -455,21 +436,16 @@ func (dao *Dao) UpdateBy(ctx context.Context, data query.Data, entries ...*types
 	sqlBuilder.WriteString(" ")
 	sqlBuilder.WriteString(conditionSQL)
 
-	var stmt *sql.Stmt
+	var result sql.Result
 	if txnCtx, ok := ctx.(*DaoTxnContext); ok {
-		stmt, err = txnCtx.Txn().Prepare(sqlBuilder.String())
+		result, err = txnCtx.Txn().Exec(sqlBuilder.String(), values...)
 	} else {
-		stmt, err = dao.db.Prepare(sqlBuilder.String())
+		result, err = dao.db.Exec(sqlBuilder.String(), values...)
 	}
 	if err != nil {
 		return 0, err
 	}
-	defer stmt.Close()
 
-	result, err := stmt.Exec(values...)
-	if err != nil {
-		return
-	}
 	affected, err = result.RowsAffected()
 	return
 }
@@ -500,19 +476,16 @@ func (dao *Dao) DeleteRange(ctx context.Context, data query.Data) (affected int6
 	sqlBuilder.WriteString("` ")
 	sqlBuilder.WriteString(conditionSQL)
 
-	var stmt *sql.Stmt
+	var result sql.Result
 	if txnCtx, ok := ctx.(*DaoTxnContext); ok {
-		stmt, err = txnCtx.Txn().Prepare(sqlBuilder.String())
+		result, err = txnCtx.Txn().Exec(sqlBuilder.String(), args...)
 	} else {
-		stmt, err = dao.db.Prepare(sqlBuilder.String())
+		result, err = dao.db.Exec(sqlBuilder.String(), args...)
 	}
 	if err != nil {
 		return
 	}
-	defer stmt.Close()
 
-	var result sql.Result
-	result, err = stmt.Exec(args...)
 	affected, err = result.RowsAffected()
 	return
 }
